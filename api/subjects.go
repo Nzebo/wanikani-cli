@@ -3,79 +3,78 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyokomi/emoji"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"strconv"
 	"time"
-	"github.com/kyokomi/emoji"
 )
 
 type SubjectCollection struct {
-	Url 					   string				`json:"url"`
+	Url   string `json:"url"`
 	Pages struct {
-		NextURL 			   string				`json:"next_url"`
+		NextURL string `json:"next_url"`
 	} `json:"pages"`
 
-	Subjects 				   []SubjectData		`json:"data"`
+	Subjects []SubjectData `json:"data"`
 }
 
 type SubjectData struct {
-	Id    					   int 					`json:"id"`
-	Object 					   string 				`json:"object"`
-	Data struct {
-		AmalgamationSubjectIds []int 				`json:"amalgamation_subject_ids"`
-		AuxiliaryMeanings	   []AuxiliaryMeanings  `json:"auxiliary_meanings"`
-		Characters			   string 				`json:"characters"`
-		CharacterImages		   []CharacterImage 	`json:"character_images"`
-		ContextSentences	   []ContextSentences	`json:"context_sentences"`
-		DocumentURL 		   string 				`json:"document_url"`
-		HiddenAt 			   string 				`json:"hidden_at"`
-		LessonPosition 		   int    				`json:"lesson_position"`
-		Level 				   int					`json:"level"`
-		Meanings			   []Meanings 			`json:"meanings"`
-		MeaningMnemonic	 	   string 				`json:"meaning_mnemonic"`
-		MeaningHint			   string				`json:"meaning_hint"`
-		Readings			   []Readings			`json:"readings"`
-		ReadingMnemonic		   string				`json:"reading_mnemonic"`
-		ReadingHint			   string				`json:"reading_hint"`
-		PartsOfSpeech		   []string				`json:"parts_of_speech"`
-		Slug				   string  				`json:"slug"`
+	Id     int    `json:"id"`
+	Object string `json:"object"`
+	Data   struct {
+		AmalgamationSubjectIds []int               `json:"amalgamation_subject_ids"`
+		AuxiliaryMeanings      []AuxiliaryMeanings `json:"auxiliary_meanings"`
+		Characters             string              `json:"characters"`
+		CharacterImages        []CharacterImage    `json:"character_images"`
+		ContextSentences       []ContextSentences  `json:"context_sentences"`
+		DocumentURL            string              `json:"document_url"`
+		HiddenAt               string              `json:"hidden_at"`
+		LessonPosition         int                 `json:"lesson_position"`
+		Level                  int                 `json:"level"`
+		Meanings               []Meanings          `json:"meanings"`
+		MeaningMnemonic        string              `json:"meaning_mnemonic"`
+		MeaningHint            string              `json:"meaning_hint"`
+		Readings               []Readings          `json:"readings"`
+		ReadingMnemonic        string              `json:"reading_mnemonic"`
+		ReadingHint            string              `json:"reading_hint"`
+		PartsOfSpeech          []string            `json:"parts_of_speech"`
+		Slug                   string              `json:"slug"`
 	} `json:"data"`
 }
 
 type AuxiliaryMeanings struct {
-		Meaning 			   string  				`json:"meaning"`
-		Type				   string  				`json:"type"`
+	Meaning string `json:"meaning"`
+	Type    string `json:"type"`
 }
 
 type CharacterImage struct {
-	URL						   string  				`json:"url"`
-	ContentType   			   string  				`json:"content_type"`
-	Metadata 	struct {
-		InlineStyles  		   string 				`json:"inline_styles"`
+	URL         string `json:"url"`
+	ContentType string `json:"content_type"`
+	Metadata    struct {
+		InlineStyles string `json:"inline_styles"`
 	} `json:"metadata"`
 }
 
 type Meanings struct {
-	Meaning  				   string  				`json:"meaning"`
-	Primary  				   bool    				`json:"primary"`
-	AcceptedAnswer 			   bool  				`json:"accepted_answer"`
+	Meaning        string `json:"meaning"`
+	Primary        bool   `json:"primary"`
+	AcceptedAnswer bool   `json:"accepted_answer"`
 }
 
 type Readings struct {
-	Type					   string				`json:"type"`
-	Primary					   bool					`json:"primary"`
-	AcceptedAnswer			   string				`json:"accepted_answer"`
-	Reading				   	   string				`json:"reading"`
+	Type           string `json:"type"`
+	Primary        bool   `json:"primary"`
+	AcceptedAnswer string `json:"accepted_answer"`
+	Reading        string `json:"reading"`
 }
 
 type ContextSentences struct {
-	English					   string				`json:"en"`
-	Japanese				   string				`json:"ja"`
+	English  string `json:"en"`
+	Japanese string `json:"ja"`
 }
-
 
 func UpdateSubjectsCache() {
 
@@ -85,10 +84,9 @@ func UpdateSubjectsCache() {
 
 	contentLimit := 0
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
+	baseConfigPath := getConfigPath()
+
+	configPath := path.Join(baseConfigPath, "_assets")
 
 	// Check the user's subscription status to respect WaniKani's content restrictions
 	isSubscribed := CheckSubscription()
@@ -101,10 +99,9 @@ func UpdateSubjectsCache() {
 		contentLimit = 3
 	}
 
-	if _, err := os.Stat(path.Join(cwd, "_assets")); os.IsNotExist(err) {
-		os.Mkdir(path.Join(cwd, "_assets"), 0755)
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		os.Mkdir(configPath, 0755)
 	}
-
 
 	for i := 1; i <= contentLimit; i++ {
 		var subjectCache []SubjectData
@@ -117,7 +114,7 @@ func UpdateSubjectsCache() {
 			log.Fatal(err)
 		}
 
-		outputFile := path.Join(cwd, "_assets", "level_" + strconv.Itoa(i) + "_subjects.json")
+		outputFile := path.Join(configPath, "level_"+strconv.Itoa(i)+"_subjects.json")
 		err = ioutil.WriteFile(outputFile, outputData, 0755)
 
 		fmt.Printf("Updated level %v subject data\n", i)
@@ -132,12 +129,10 @@ func UpdateSubjectsCache() {
 		log.Fatal(err)
 	}
 
-
-	outputFile := path.Join(cwd, "_assets", "subjects.json")
+	outputFile := path.Join(configPath, "subjects.json")
 	err = ioutil.WriteFile(outputFile, outputData, 0755)
 
 	fmt.Println("\nSuccessfully updated subjects cache!")
-
 
 }
 

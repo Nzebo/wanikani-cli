@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	ui "github.com/gizak/termui/v3"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 	"log"
 	"os"
@@ -12,14 +13,32 @@ import (
 	"strings"
 )
 
-func LoadConfig() {
+func getConfigPath() string {
 
-	cwd, err := os.Getwd()
+	configPath := ""
+	GOOS := os.Getenv("GOOS")
+
+	homeDirectory, err := homedir.Dir()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	configPath := path.Join(cwd, "config")
+	switch GOOS {
+	case "darwin":
+		configPath = path.Join(homeDirectory, ".wanikani-cli")
+	case "linux":
+		configPath = path.Join(homeDirectory, ".config", "wanikani-cli")
+	case "windows":
+		configPath = path.Join(homeDirectory, "Documents", "WaniKani-cli")
+	}
+
+	return configPath
+
+}
+
+func LoadConfig() {
+
+	configPath := getConfigPath()
 
 	viper.SetConfigName("wkutil_config")
 	viper.SetConfigType("yaml")
@@ -28,24 +47,27 @@ func LoadConfig() {
 	viperErr := viper.ReadInConfig()
 
 	if viperErr != nil {
+		fmt.Println(viperErr)
 		fmt.Println("No config file detected, running first time setup...")
 	}
 
 	if viper.Get("apitoken") == nil {
 		fmt.Println("No API token set. Please enter your WaniKani API v2 token:")
-		InitialConfig(cwd)
+		InitialConfig()
 	}
 }
 
-func InitialConfig(cwd string) {
+func InitialConfig() {
 
-	configPath := path.Join(cwd, "config", "wkutil_config.yaml")
+	baseConfigPath := getConfigPath()
 
-	if _, err := os.Stat(path.Join(cwd, "config")); os.IsNotExist(err) {
-		os.Mkdir(path.Join(cwd, "config"), 0755)
+	configPath := path.Join(baseConfigPath, "wkutil_config.yaml")
+
+	if _, err := os.Stat(baseConfigPath); os.IsNotExist(err) {
+		os.Mkdir(path.Join(baseConfigPath), 0755)
 	}
 
-	file , _ := os.OpenFile(configPath, os.O_RDONLY|os.O_CREATE, 0755)
+	file, _ := os.OpenFile(configPath, os.O_RDONLY|os.O_CREATE, 0755)
 
 	file.Close()
 
@@ -94,8 +116,8 @@ func SetConfig(key, value string) {
 }
 
 const (
-	ColorPink 	   ui.Color = 13
+	ColorPink      ui.Color = 13
 	ColorLightBlue ui.Color = 12
 	ColorWhite     ui.Color = 15
-	ColorBlack	   ui.Color = 0
+	ColorBlack     ui.Color = 0
 )

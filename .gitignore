@@ -10,3 +10,15 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# User configuration
+config/
+
+# Assets pulled on initial setup
+_assets
+
+# IDE configuration files
+.idea
+
+# Misc files
+.DS_Store

@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"github.com/gizak/termui/v3/widgets"
 	"waniKani/api"
+	"waniKani/tools"
 )
 
-func UpdateUserData() (string, string){
+func UpdateUserData() (string, string) {
 
 	results := api.GetWaniKaniData("user")
 
@@ -53,10 +54,14 @@ func userParse(results []byte) (string, string) {
 
 func userCreateElement(title, text string) *widgets.Paragraph {
 
+	ws := tools.GetTTYSize()
+
+	x2 := ws.Width / 4
+
 	t := widgets.NewParagraph()
 	t.Title = title
 	t.Text = text
-	t.SetRect(0, 0, 50, 5)
+	t.SetRect(0, 0, x2, 5)
 
 	return t
 

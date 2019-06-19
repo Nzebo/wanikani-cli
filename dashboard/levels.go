@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 	"waniKani/api"
+	"waniKani/tools"
 )
 
 type LevelInfo []float64
@@ -19,21 +20,19 @@ type LevelData struct {
 }
 
 type LevelObj struct {
-	Id string `json:"id"`
+	Id      string `json:"id"`
 	Details struct {
-		Level int `json:"level"`
+		Level    int    `json:"level"`
 		Unlocked string `json:"unlocked_at"`
-		Started string `json:"started_at"`
-		Passed string `json:"passed_at"`
+		Started  string `json:"started_at"`
+		Passed   string `json:"passed_at"`
 	} `json:"data"`
 }
 
-
-func UpdateLevelData() (LevelLabels, LevelInfo){
+func UpdateLevelData() (LevelLabels, LevelInfo) {
 	results := api.GetWaniKaniData("level_progressions")
 
 	var resetTimestamp = api.GetLatestReset()
-
 
 	return levelParse(results, resetTimestamp)
 }
@@ -66,7 +65,6 @@ func levelParse(results []byte, resetTimestamp time.Time) (LevelLabels, LevelInf
 			log.Fatal(err)
 		}
 
-
 		if levelStartTime.Unix() < resetTimestamp.Unix() {
 
 			continue
@@ -79,19 +77,17 @@ func levelParse(results []byte, resetTimestamp time.Time) (LevelLabels, LevelInf
 					log.Fatal(err)
 				}
 
-
-				levelDuration := math.Round((float64(levelPassedTime.Unix() - levelStartTime.Unix()) / 60 / 60 / 24) * 100) / 100
+				levelDuration := math.Round((float64(levelPassedTime.Unix()-levelStartTime.Unix())/60/60/24)*100) / 100
 
 				ldata = append(ldata, levelDuration)
-				llabel = append(llabel, "L" + strconv.Itoa(level))
-
+				llabel = append(llabel, "L"+strconv.Itoa(level))
 
 			} else {
 
-				levelDuration := math.Round((float64(time.Now().Unix() - levelStartTime.Unix()) / 60 / 60 / 24) * 100) / 100
+				levelDuration := math.Round((float64(time.Now().Unix()-levelStartTime.Unix())/60/60/24)*100) / 100
 
 				ldata = append(ldata, levelDuration)
-				llabel = append(llabel, "L" + strconv.Itoa(level))
+				llabel = append(llabel, "L"+strconv.Itoa(level))
 
 			}
 
@@ -105,11 +101,17 @@ func levelParse(results []byte, resetTimestamp time.Time) (LevelLabels, LevelInf
 
 func levelBarChart(labels LevelLabels, data LevelInfo) *widgets.BarChart {
 
+	ws := tools.GetTTYSize()
+
+	y1 := ws.Height / 4
+	x2 := ws.Width
+	y2 := ws.Height / 2
+
 	bc := widgets.NewBarChart()
 	bc.Data = data
 	bc.Labels = labels
 	bc.Title = "Time Per Level (in Days)"
-	bc.SetRect(0, 45, 75, 25)
+	bc.SetRect(0, y1, x2, y2)
 	bc.BarWidth = 8
 	bc.BarColors = []ui.Color{api.ColorPink, api.ColorLightBlue}
 	bc.LabelStyles = []ui.Style{ui.NewStyle(api.ColorWhite)}

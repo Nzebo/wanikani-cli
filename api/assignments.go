@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"gopkg.in/gookit/color.v1"
 	"log"
 	"os"
 	"strconv"
@@ -12,32 +13,31 @@ import (
 
 type AssignmentCollection struct {
 	Pages struct {
-		PerPage 		int 		 `json:"per_page"`
-		NextURL 		string  	 `json:"next_url"`
+		PerPage int    `json:"per_page"`
+		NextURL string `json:"next_url"`
 	} `json:"pages"`
 
-	TotalCount			int			 `json:"total_count"`
-	Assignments 		[]Assignment `json:"data"`
+	TotalCount  int          `json:"total_count"`
+	Assignments []Assignment `json:"data"`
 }
 
 type Assignment struct {
-	Id					int			 `json:"id"`
-	URL 				string		 `json:"url"`
+	Id   int    `json:"id"`
+	URL  string `json:"url"`
 	Data struct {
-		SubjectID    	int 		 `json:"subject_id"`
-		SubjectType  	string  	 `json:"subject_type"`
-		SRSStage     	int 		 `json:"srs_stage"`
-		SRSStageName 	string 		 `json:"srs_stage_name"`
-		UnlockedAt   	string 		 `json:"unlocked_at"`
-		StartedAt    	string 		 `json:"started_at"`
-		PassedAt	 	string 		 `json:"passed_at"`
-		BurnedAt	 	string 		 `json:"burned_at"`
-		AvailableAt  	string 		 `json:"available_at"`
-		ResurrectedAt 	string 		 `json:"resurrected_at"`
-		Passed		  	bool		 `json:"passed"`
-		Resurrected   	bool   		 `json:"resurrected"`
-		Hidden			bool		 `json:"hidden"`
-
+		SubjectID     int    `json:"subject_id"`
+		SubjectType   string `json:"subject_type"`
+		SRSStage      int    `json:"srs_stage"`
+		SRSStageName  string `json:"srs_stage_name"`
+		UnlockedAt    string `json:"unlocked_at"`
+		StartedAt     string `json:"started_at"`
+		PassedAt      string `json:"passed_at"`
+		BurnedAt      string `json:"burned_at"`
+		AvailableAt   string `json:"available_at"`
+		ResurrectedAt string `json:"resurrected_at"`
+		Passed        bool   `json:"passed"`
+		Resurrected   bool   `json:"resurrected"`
+		Hidden        bool   `json:"hidden"`
 	} `json:"data"`
 }
 
@@ -54,13 +54,13 @@ func CheckAssignments(args []string) {
 		case "--today":
 			year, month, day := time.Now().Date()
 			date := time.Date(year, month, day, 23, 59, 59, 0, time.Local).UTC().Format("2006-01-02T15:04:05Z")
-			arguments = append(arguments[1:], "available_before=" + date +  "&available_after=" + now)
-		//case "--radicals": //todo fix the subject type filter
-		//	arguments = append(arguments, "subject_types=radical")
-		//case "--kanji":
-		//	arguments = append(arguments, "subject_types=kanji")
+			arguments = append(arguments[1:], "available_before="+date+"&available_after="+now)
+		case "--radicals": //todo fix the subject type filter
+			arguments = append(arguments, "subject_types=radical")
+		case "--kanji":
+			arguments = append(arguments, "subject_types=kanji")
 		default:
-			fmt.Printf("Invalid flag '%v'. Valid flags are <x>\n", arg) //todo add list of flags
+			fmt.Printf("Invalid flag '%v'. Valid flags are [--today, --lessons]\n", arg) //todo add list of flags
 			os.Exit(1)
 		}
 
@@ -74,7 +74,26 @@ func CheckAssignments(args []string) {
 
 	_ = json.Unmarshal(assignmentResults, &assignmentData)
 
-	fmt.Printf("\nAssignments: %v\n\n", assignmentData.TotalCount)
+	radicalCount := 0
+	kanjiCount := 0
+	vocabularyCount := 0
+
+	for _, item := range assignmentData.Assignments {
+
+		switch item.Data.SubjectType {
+		case "radical":
+			radicalCount++
+		case "kanji":
+			kanjiCount++
+		case "vocabulary":
+			vocabularyCount++
+		}
+	}
+
+	fmt.Printf("\nReviews available:\n\n")
+	color.RGB(0, 170, 255).Printf("Radicals: %v\n", radicalCount)
+	color.RGB(255, 0, 170).Printf("Kanji: %v\n", kanjiCount)
+	color.RGB(170, 0, 255).Printf("Vocabulary: %v\n\n", vocabularyCount)
 
 }
 
@@ -98,19 +117,17 @@ func GetLevelPercentage() (int, int) {
 
 	_ = json.Unmarshal(currentProgress, &assignments)
 
-
 	for _, review := range assignments.Assignments {
 
 		if review.Data.StartedAt == "" {
 			continue
 		}
 
-		startTime, err := time.Parse(time.RFC3339,review.Data.StartedAt)
+		startTime, err := time.Parse(time.RFC3339, review.Data.StartedAt)
 
 		if err != nil {
 			log.Fatal(err)
 		}
-
 
 		if startTime.Unix() < reset.Unix() {
 			continue
@@ -131,10 +148,6 @@ func GetLevelPercentage() (int, int) {
 
 	}
 
-	return int(passedRadicalAssignments/totalRadicalAssignments*100), int(passedKanjiAssignments/totalKanjiAssignments*100)
+	return int(passedRadicalAssignments / totalRadicalAssignments * 100), int(passedKanjiAssignments / totalKanjiAssignments * 100)
 
 }
-
-
-
-

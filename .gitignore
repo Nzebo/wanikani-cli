@@ -18,7 +18,7 @@ config/
 _assets
 
 # IDE configuration files
-.idea
+.idea/
 
 # Misc files
 .DS_Store
